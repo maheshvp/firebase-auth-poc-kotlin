@@ -17,16 +17,13 @@ import com.google.firebase.auth.OAuthProvider
  * Before using, you must:
  * 1. Configure your OIDC provider (Azure AD, Okta, Auth0, etc.)
  * 2. Add the provider to Firebase Console -> Authentication -> Sign-in method -> Custom providers
- * 3. Update the PROVIDER_ID below with your provider ID from Firebase
+ * 3. Update the oidc.provider.id in app/src/main/res/raw/config_properties
  */
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private lateinit var auth: FirebaseAuth
-
-    // TODO: Replace with your OIDC provider ID from Firebase Console
-    // Format: "oidc.{your-provider-name}" (e.g., "oidc.azure_test", "oidc.okta")
-    private val PROVIDER_ID = "oidc.auth0"
+    private lateinit var authConfig: AuthConfig
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,26 +34,43 @@ class LoginActivity : AppCompatActivity() {
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
 
+        // Load configuration
+        try {
+            authConfig = ConfigManager.getAuthConfig(this)
+            android.util.Log.d("LoginActivity", "Configuration loaded: ${authConfig.oidcProviderId}")
+        } catch (e: ConfigurationException) {
+            android.util.Log.e("LoginActivity", "Failed to load configuration", e)
+            showError("Configuration Error: ${e.message}")
+            binding.btnSignIn.isEnabled = false
+            return
+        }
+
         setupUI()
     }
 
     private fun setupUI() {
         binding.btnSignIn.setOnClickListener {
-            showProviderIdDialog()
+            // If development mode is enabled, show dialog to allow changing provider ID
+            if (authConfig.developmentMode) {
+                showProviderIdDialog()
+            } else {
+                // Use provider ID from config directly
+                signInWithOIDC(authConfig.oidcProviderId)
+            }
         }
     }
 
     /**
      * Shows a dialog to enter or confirm the OIDC Provider ID
-     * This is helpful for testing different providers
+     * This is helpful for testing different providers in development mode
      */
     private fun showProviderIdDialog() {
         val input = android.widget.EditText(this)
-        input.setText(PROVIDER_ID)
+        input.setText(authConfig.oidcProviderId)
         input.hint = "Enter your OIDC Provider ID"
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("OIDC Provider ID")
+            .setTitle("OIDC Provider ID (Development Mode)")
             .setMessage("Enter your provider ID from Firebase Console\n(Format: oidc.provider_name)")
             .setView(input)
             .setPositiveButton("Sign In") { _, _ ->

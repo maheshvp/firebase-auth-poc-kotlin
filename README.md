@@ -71,16 +71,34 @@ firebase-auth-poc-kotlin/
 │   └── src/
 ```
 
-### 3. Update OIDC Provider ID
+### 3. Configure OIDC Provider Settings
 
-Open `LoginActivity.kt` and update the `PROVIDER_ID` constant:
+Create the configuration file from the template:
 
-```kotlin
-// File: app/src/main/java/com/example/firebaseauth/LoginActivity.kt
-private val PROVIDER_ID = "oidc.your_provider_name"  // Update this
+```bash
+# Copy the template file
+cp app/src/main/res/raw/config_properties_template app/src/main/res/raw/config_properties
+```
+
+Then edit `app/src/main/res/raw/config_properties` and update the OIDC provider ID:
+
+```properties
+# REQUIRED: Update with your provider ID from Firebase Console
+oidc.provider.id=oidc.your_provider_name
+
+# OPTIONAL: Add custom parameters if needed
+# oidc.custom.params=tenant=your-tenant-id
+
+# OPTIONAL: Specify scopes
+# oidc.scopes=openid,email,profile
+
+# OPTIONAL: Enable development mode for testing
+oidc.development.mode=false
 ```
 
 Replace `your_provider_name` with the name you configured in Firebase Console.
+
+**Note**: The `config_properties` file is excluded from git to keep your credentials safe. Always use the template file as a reference.
 
 ### 4. Configure Gradle (if needed)
 
@@ -146,12 +164,17 @@ firebase-auth-poc-kotlin/
 │   │   │   │   ├── MainActivity.kt          # Entry point, auth state check
 │   │   │   │   ├── LoginActivity.kt         # OIDC sign-in flow
 │   │   │   │   ├── HomeActivity.kt          # Protected home screen
-│   │   │   │   └── AuthManager.kt           # Auth utility class
+│   │   │   │   ├── AuthManager.kt           # Auth utility class
+│   │   │   │   ├── AuthConfig.kt            # Configuration data class
+│   │   │   │   └── ConfigManager.kt         # Configuration loader
 │   │   │   ├── res/
 │   │   │   │   ├── layout/
 │   │   │   │   │   ├── activity_main.xml
 │   │   │   │   │   ├── activity_login.xml
 │   │   │   │   │   └── activity_home.xml
+│   │   │   │   ├── raw/
+│   │   │   │   │   ├── config_properties            # Your config (git ignored)
+│   │   │   │   │   └── config_properties_template   # Template file
 │   │   │   │   └── values/
 │   │   │   │       ├── strings.xml
 │   │   │   │       ├── colors.xml
@@ -175,11 +198,12 @@ firebase-auth-poc-kotlin/
 
 2. **Sign In** (`LoginActivity.kt`)
    - User clicks "Sign in with OpenID Connect"
-   - Dialog prompts for OIDC Provider ID (for easy testing)
+   - App loads OIDC Provider ID from `config_properties`
    - Firebase initiates OAuth flow with OIDC provider
    - User authenticates with OIDC provider
    - Firebase receives and validates the ID token
    - User is signed in to Firebase
+   - Note: Development mode can be enabled to show provider ID dialog for testing
 
 3. **Home Screen** (`HomeActivity.kt`)
    - Displays user information (name, email, user ID)
@@ -212,6 +236,20 @@ Utility class providing:
 - Get ID token
 - Get user claims
 - Auth state listeners
+
+#### ConfigManager.kt
+Singleton class that:
+- Loads configuration from `config_properties` file
+- Parses OIDC settings (provider ID, scopes, custom parameters)
+- Provides type-safe access to configuration
+- Handles configuration errors gracefully
+
+#### AuthConfig.kt
+Data class holding authentication configuration:
+- OIDC provider ID
+- Custom parameters
+- OAuth scopes
+- Development mode flag
 
 ## Common OIDC Providers Configuration
 
@@ -253,10 +291,19 @@ Utility class providing:
 
 1. Launch the app
 2. Click "Sign in with OpenID Connect"
-3. Enter or confirm your OIDC Provider ID
-4. Authenticate with your OIDC provider
-5. Verify user information on home screen
-6. Test sign-out functionality
+3. Authenticate with your OIDC provider (provider ID from config is used automatically)
+4. Verify user information on home screen
+5. Test sign-out functionality
+
+### Development Mode Testing
+
+To test different provider IDs without editing the config file:
+
+1. Set `oidc.development.mode=true` in `config_properties`
+2. Launch the app
+3. Click "Sign in with OpenID Connect"
+4. A dialog will appear allowing you to enter/change the provider ID
+5. Test with different provider IDs as needed
 
 ### Debug Mode
 
@@ -301,13 +348,17 @@ adb logcat | grep -E "LoginActivity|HomeActivity"
 
 ## Security Considerations
 
-1. **Never commit `google-services.json`** to version control
+1. **Never commit sensitive files** to version control:
+   - `google-services.json` (already in .gitignore)
+   - `config_properties` (already in .gitignore)
+   - Use the template files instead
 2. Use **ProGuard/R8** for release builds to obfuscate code
 3. Implement **certificate pinning** for production apps
 4. Store sensitive data using **EncryptedSharedPreferences**
 5. Validate ID tokens on your backend server
 6. Handle token refresh appropriately
 7. Implement proper **session management**
+8. Review `config_properties` before deploying to production
 
 ## Next Steps
 

@@ -54,6 +54,9 @@ render.experimental.xml
 # Google Services (API keys, etc)
 google-services.json
 
+# App configuration files (contains sensitive provider IDs)
+app/src/main/res/raw/config_properties
+
 # Freeline
 freeline.py
 freeline/
@@ -89,3 +92,6 @@ lint/tmp/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Claude Code
+.claude/

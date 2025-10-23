@@ -1,0 +1,41 @@
+# Firebase Authentication Configuration Template
+#
+# INSTRUCTIONS:
+# 1. Copy this file to config.properties in the same directory
+#    cp config.properties.template config.properties
+# 2. Update the values below with your actual configuration
+# 3. The config.properties file is excluded from git to keep your credentials safe
+
+# REQUIRED: OIDC Provider ID from Firebase Console
+# Format: oidc.{provider-name}
+# Examples:
+#   - oidc.auth0
+#   - oidc.azure
+#   - oidc.okta
+#   - oidc.google
+oidc.provider.id=oidc.your_provider_name
+
+# OPTIONAL: Custom parameters (comma-separated key=value pairs)
+# Some OIDC providers require additional parameters
+# Examples:
+#   - Azure AD: oidc.custom.params=tenant=your-tenant-id
+#   - Custom domain: oidc.custom.params=domain=your-domain.com
+#   - Multiple params: oidc.custom.params=tenant=abc123,prompt=consent
+# Leave empty or comment out if not needed
+# oidc.custom.params=
+
+# OPTIONAL: OAuth Scopes (comma-separated)
+# Specify which user information you want to access
+# Common scopes:
+#   - openid: Required for OIDC
+#   - email: User's email address
+#   - profile: User's profile information (name, picture, etc.)
+# Example: oidc.scopes=openid,email,profile
+# Leave empty or comment out to use provider defaults
+# oidc.scopes=openid,email,profile
+
+# OPTIONAL: Development mode flag (true/false)
+# When true: Shows a dialog to enter/change provider ID at runtime for testing
+# When false: Uses the provider ID from this config file directly (recommended for production)
+# Default: false
+oidc.development.mode=false
