@@ -1,8 +1,18 @@
 package com.example.firebaseauth
 
 import android.app.Activity
+import android.content.Context
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.tasks.await
 
@@ -284,7 +294,141 @@ class AuthManager private constructor() {
     }
 
     /**
-     * Sign out the current user
+     * Sign in with Google using Credential Manager API
+     *
+     * This method uses the modern Credential Manager API which provides
+     * a unified sign-in experience across Google accounts.
+     *
+     * @param context The context (activity or application context)
+     * @param webClientId The OAuth 2.0 web client ID from Firebase Console
+     * @return Result with FirebaseUser or exception
+     */
+    suspend fun signInWithGoogle(
+        context: Context,
+        webClientId: String
+    ): Result<FirebaseUser> {
+        return try {
+            android.util.Log.d("AuthManager", "signInWithGoogle called")
+
+            val credentialManager = CredentialManager.create(context)
+
+            // Build Google ID option
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setServerClientId(webClientId)
+                .setFilterByAuthorizedAccounts(false)
+                .setAutoSelectEnabled(false)
+                .build()
+
+            // Build credential request
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build()
+
+            android.util.Log.d("AuthManager", "Requesting credentials...")
+
+            // Get credential from Credential Manager
+            val result = credentialManager.getCredential(
+                request = request,
+                context = context
+            )
+
+            android.util.Log.d("AuthManager", "Credential received, processing...")
+
+            // Handle the credential response
+            handleGoogleSignInResult(result)
+        } catch (e: Exception) {
+            android.util.Log.e("AuthManager", "Google Sign-In failed", e)
+            android.util.Log.e("AuthManager", "Exception type: ${e.javaClass.name}")
+            android.util.Log.e("AuthManager", "Exception message: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Handle the credential response from Credential Manager
+     */
+    private suspend fun handleGoogleSignInResult(
+        result: GetCredentialResponse
+    ): Result<FirebaseUser> {
+        return try {
+            val credential = result.credential
+
+            if (credential is CustomCredential &&
+                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+
+                android.util.Log.d("AuthManager", "Processing Google ID token credential")
+
+                // Extract the ID token from the credential
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                val idToken = googleIdTokenCredential.idToken
+
+                android.util.Log.d("AuthManager", "ID token extracted, authenticating with Firebase...")
+
+                // Authenticate with Firebase using the Google ID token
+                firebaseAuthWithGoogle(idToken)
+            } else {
+                android.util.Log.e("AuthManager", "Unexpected credential type: ${credential.type}")
+                Result.failure(Exception("Unexpected credential type: ${credential.type}"))
+            }
+        } catch (e: GoogleIdTokenParsingException) {
+            android.util.Log.e("AuthManager", "Invalid Google ID token", e)
+            Result.failure(e)
+        } catch (e: Exception) {
+            android.util.Log.e("AuthManager", "Error handling Google sign-in result", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Authenticate with Firebase using Google ID token
+     */
+    private suspend fun firebaseAuthWithGoogle(idToken: String): Result<FirebaseUser> {
+        return try {
+            android.util.Log.d("AuthManager", "Creating Firebase credential from Google token")
+
+            val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+
+            android.util.Log.d("AuthManager", "Signing in to Firebase...")
+
+            val authResult = auth.signInWithCredential(firebaseCredential).await()
+
+            val user = authResult.user
+            if (user != null) {
+                android.util.Log.d("AuthManager", "Firebase sign-in successful! User ID: ${user.uid}")
+                android.util.Log.d("AuthManager", "User email: ${user.email}")
+                android.util.Log.d("AuthManager", "User display name: ${user.displayName}")
+                Result.success(user)
+            } else {
+                android.util.Log.e("AuthManager", "Firebase sign-in failed: User is null")
+                Result.failure(Exception("Firebase authentication failed: User is null"))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AuthManager", "Firebase authentication exception", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Sign out the current user and clear credential state
+     *
+     * @param context The context to clear credential state
+     */
+    suspend fun signOut(context: Context) {
+        try {
+            auth.signOut()
+
+            // Clear credential state to sign out from Google account
+            val credentialManager = CredentialManager.create(context)
+            credentialManager.clearCredentialState(ClearCredentialStateRequest())
+
+            android.util.Log.d("AuthManager", "Sign out successful")
+        } catch (e: Exception) {
+            android.util.Log.e("AuthManager", "Error during sign out", e)
+        }
+    }
+
+    /**
+     * Sign out the current user (Firebase only)
      */
     fun signOut() {
         auth.signOut()

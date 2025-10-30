@@ -4,9 +4,13 @@
 
     <!-- Login Screen -->
     <string name="sign_in_with_oidc">Sign in with OpenID Connect</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
     <string name="welcome_message">Welcome to Firebase Auth POC</string>
     <string name="oidc_description">This app demonstrates OpenID Connect authentication with Firebase</string>
     <string name="sign_in">Sign In</string>
+
+    <!-- Web Client ID from google-services.json (oauth_client with client_type: 3) -->
+    <string name="default_web_client_id">516625971253-ekqhl5ghukkikp8jannuaphl0smvel12.apps.googleusercontent.com</string>
 
     <!-- Home Screen -->
     <string name="welcome_user">Welcome, %1$s!</string>

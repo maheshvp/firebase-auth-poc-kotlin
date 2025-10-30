@@ -5,10 +5,12 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.firebaseauth.databinding.ActivityLoginBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.OAuthProvider
+import kotlinx.coroutines.launch
 
 /**
  * LoginActivity - Handles OpenID Connect authentication
@@ -24,6 +26,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
     private lateinit var auth: FirebaseAuth
     private lateinit var authConfig: AuthConfig
+    private val authManager = AuthManager.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +61,10 @@ class LoginActivity : AppCompatActivity() {
                 signInWithOIDC(authConfig.oidcProviderId)
             }
         }
+
+        binding.btnGoogleSignIn.setOnClickListener {
+            signInWithGoogle()
+        }
     }
 
     /**
@@ -83,6 +90,47 @@ class LoginActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    /**
+     * Initiates Google Sign-In flow using Credential Manager API
+     */
+    private fun signInWithGoogle() {
+        android.util.Log.d("LoginActivity", "Starting Google Sign-In")
+        showLoading(true)
+
+        lifecycleScope.launch {
+            try {
+                // Get the web client ID from resources
+                val webClientId = getString(R.string.default_web_client_id)
+
+                // Validate web client ID
+                if (webClientId == "YOUR_WEB_CLIENT_ID_HERE") {
+                    showError("Please configure your Web Client ID in strings.xml")
+                    showLoading(false)
+                    return@launch
+                }
+
+                android.util.Log.d("LoginActivity", "Web Client ID: $webClientId")
+
+                // Sign in with Google
+                val result = authManager.signInWithGoogle(this@LoginActivity, webClientId)
+
+                result.fold(
+                    onSuccess = { user ->
+                        android.util.Log.d("LoginActivity", "Google Sign-In successful: ${user.uid}")
+                        handleAuthSuccess(user)
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("LoginActivity", "Google Sign-In failed", exception)
+                        handleAuthFailure(exception)
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("LoginActivity", "Google Sign-In exception", e)
+                handleAuthFailure(e)
+            }
+        }
     }
 
     /**
@@ -179,7 +227,7 @@ class LoginActivity : AppCompatActivity() {
      * Handles authentication failure
      * Separated from listener to avoid Activity reference issues
      */
-    private fun handleAuthFailure(exception: Exception) {
+    private fun handleAuthFailure(exception: Throwable) {
         android.util.Log.e("LoginActivity", "handleAuthFailure called")
         android.util.Log.e("LoginActivity", "Exception type: ${exception.javaClass.name}")
         android.util.Log.e("LoginActivity", "Exception message: ${exception.message}")

@@ -5,9 +5,11 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.firebaseauth.databinding.ActivityHomeBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 /**
  * HomeActivity - Protected screen shown after successful authentication
@@ -17,6 +19,7 @@ class HomeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
     private lateinit var auth: FirebaseAuth
+    private val authManager = AuthManager.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,17 +80,32 @@ class HomeActivity : AppCompatActivity() {
     }
 
     /**
-     * Signs out the current user from Firebase
-     * Note: This only signs out from Firebase. You may need to handle
-     * signing out from your OIDC provider separately depending on your requirements
+     * Signs out the current user from Firebase and clears credential state
+     * This ensures Google Sign-In credentials are also cleared
      */
     private fun signOut() {
-        auth.signOut()
+        lifecycleScope.launch {
+            try {
+                // Sign out and clear credential state (for Google Sign-In)
+                authManager.signOut(this@HomeActivity)
 
-        Toast.makeText(this, "Signed out successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@HomeActivity,
+                    "Signed out successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
 
-        // Navigate back to login
-        navigateToLogin()
+                // Navigate back to login
+                navigateToLogin()
+            } catch (e: Exception) {
+                android.util.Log.e("HomeActivity", "Error during sign out", e)
+                Toast.makeText(
+                    this@HomeActivity,
+                    "Error signing out: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     private fun navigateToLogin() {
