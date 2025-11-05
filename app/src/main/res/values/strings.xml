@@ -4,9 +4,11 @@
 
     <!-- Login Screen -->
     <string name="sign_in_with_oidc">Sign in with OpenID Connect</string>
+    <string name="sign_in_with_saml">Sign in with SAML</string>
+    <string name="sign_in_with_provider">Sign in with Provider</string>
     <string name="sign_in_with_google">Sign in with Google</string>
     <string name="welcome_message">Welcome to Firebase Auth POC</string>
-    <string name="oidc_description">This app demonstrates OpenID Connect authentication with Firebase</string>
+    <string name="oidc_description">This app demonstrates OIDC and SAML authentication with Firebase</string>
     <string name="sign_in">Sign In</string>
 
     <!-- Web Client ID from google-services.json (oauth_client with client_type: 3) -->
@@ -21,7 +23,7 @@
 
     <!-- Error Messages -->
     <string name="error_authentication">Authentication failed. Please try again.</string>
-    <string name="error_provider_not_configured">OIDC provider not configured. Please check Firebase Console.</string>
+    <string name="error_provider_not_configured">Authentication provider not configured. Please check Firebase Console.</string>
     <string name="error_network">Network error. Please check your connection.</string>
     <string name="loading">Loading...</string>
 </resources>

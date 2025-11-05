@@ -55,7 +55,7 @@
                 android:textSize="14sp"
                 android:textColor="@android:color/darker_gray"
                 android:gravity="center"
-                android:layout_marginBottom="32dp" />
+                android:layout_marginBottom="24dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSignIn"
@@ -66,6 +66,18 @@
                 app:cornerRadius="8dp"
                 app:icon="@android:drawable/ic_secure"
                 app:iconGravity="start" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSamlSignIn"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/sign_in_with_saml"
+                android:textSize="16sp"
+                app:cornerRadius="8dp"
+                app:icon="@android:drawable/ic_secure"
+                app:iconGravity="start"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGoogleSignIn"
@@ -105,7 +117,7 @@
         android:id="@+id/infoText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Make sure to configure your OIDC provider in Firebase Console"
+        android:text="Make sure to configure your authentication provider (OIDC/SAML) in Firebase Console"
         android:textSize="12sp"
         android:textColor="@android:color/darker_gray"
         android:gravity="center"

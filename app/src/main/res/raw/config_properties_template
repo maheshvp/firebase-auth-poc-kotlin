@@ -6,30 +6,61 @@
 # 2. Update the values below with your actual configuration
 # 3. The config.properties file is excluded from git to keep your credentials safe
 
-# REQUIRED: OIDC Provider ID from Firebase Console
-# Format: oidc.{provider-name}
-# Examples:
-#   - oidc.auth0
-#   - oidc.azure
-#   - oidc.okta
-#   - oidc.google
-oidc.provider.id=oidc.your_provider_name
+# =====================================================================
+# AUTHENTICATION PROVIDER CONFIGURATION
+# =====================================================================
 
-# OPTIONAL: Custom parameters (comma-separated key=value pairs)
-# Some OIDC providers require additional parameters
+# This project supports both OIDC and SAML authentication providers.
+# You can configure ONE or BOTH providers - the app will enable/disable
+# buttons based on what's configured.
+
+# OIDC Provider ID from Firebase Console
+# Format: oidc.{provider-name}
+# Examples: oidc.auth0, oidc.azure, oidc.okta, oidc.google
+#
+# Uncomment and configure to enable OIDC authentication:
+oidc.provider.id=oidc.auth0
+
+# SAML Provider ID from Firebase Console
+# Format: saml.{provider-name}
+# Examples: saml.auth0, saml.okta, saml.azure, saml.onelogin
+#
+# IMPORTANT: The provider ID MUST EXACTLY match what you configured in Firebase Console:
+# 1. Go to Firebase Console -> Authentication -> Sign-in method
+# 2. Find your SAML provider and click on it
+# 3. Copy the exact "Provider ID" shown (e.g., saml.mycompany)
+# 4. Paste it below (do NOT make up a name - use the exact ID from Firebase)
+#
+# Uncomment and configure to enable SAML authentication:
+saml.provider.id=saml.auth0
+
+# NOTE: At least ONE provider (OIDC or SAML) must be configured.
+# You can configure both to support multiple authentication methods.
+
+# =====================================================================
+# ADVANCED CONFIGURATION (OPTIONAL)
+# =====================================================================
+
+# OPTIONAL: Custom parameters for OIDC (comma-separated key=value pairs)
+# Note: Only applicable for OIDC providers. SAML providers typically don't need these.
+#
 # Examples:
 #   - Azure AD: oidc.custom.params=tenant=your-tenant-id
 #   - Custom domain: oidc.custom.params=domain=your-domain.com
 #   - Multiple params: oidc.custom.params=tenant=abc123,prompt=consent
+#
 # Leave empty or comment out if not needed
 # oidc.custom.params=
 
-# OPTIONAL: OAuth Scopes (comma-separated)
+# OPTIONAL: OAuth Scopes for OIDC (comma-separated)
+# Note: Only applicable for OIDC providers. SAML providers don't use scopes.
+#
 # Specify which user information you want to access
 # Common scopes:
 #   - openid: Required for OIDC
 #   - email: User's email address
 #   - profile: User's profile information (name, picture, etc.)
+#
 # Example: oidc.scopes=openid,email,profile
 # Leave empty or comment out to use provider defaults
 # oidc.scopes=openid,email,profile
@@ -38,4 +69,4 @@ oidc.provider.id=oidc.your_provider_name
 # When true: Shows a dialog to enter/change provider ID at runtime for testing
 # When false: Uses the provider ID from this config file directly (recommended for production)
 # Default: false
-oidc.development.mode=false
+auth.development.mode=false

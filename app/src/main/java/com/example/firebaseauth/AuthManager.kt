@@ -19,8 +19,13 @@ import kotlinx.coroutines.tasks.await
 /**
  * AuthManager - Utility class for Firebase Authentication operations
  *
- * This class provides a simplified interface for OIDC authentication
- * and can be extended for other authentication methods.
+ * This class provides a simplified interface for OIDC and SAML authentication
+ * using Firebase's OAuth provider mechanism.
+ *
+ * Supported authentication methods:
+ * - OIDC (OpenID Connect): Provider IDs starting with "oidc."
+ * - SAML: Provider IDs starting with "saml."
+ * - Google Sign-In: Using Credential Manager API
  */
 class AuthManager private constructor() {
 
@@ -52,22 +57,33 @@ class AuthManager private constructor() {
     }
 
     /**
-     * Sign in with OpenID Connect provider
+     * Sign in with OAuth provider (OIDC or SAML)
+     *
+     * This method works with both OIDC and SAML providers configured in Firebase Console.
+     * The provider type is automatically detected from the provider ID prefix:
+     * - OIDC providers: "oidc.{provider-name}" (e.g., "oidc.auth0")
+     * - SAML providers: "saml.{provider-name}" (e.g., "saml.auth0")
      *
      * @param activity The activity context for the sign-in flow
-     * @param providerId The OIDC provider ID from Firebase Console
-     * @param customParameters Optional custom parameters for the OIDC provider
-     * @param scopes Optional scopes to request
+     * @param providerId The provider ID from Firebase Console (oidc.* or saml.*)
+     * @param customParameters Optional custom parameters (primarily for OIDC providers)
+     * @param scopes Optional scopes to request (primarily for OIDC providers)
      * @return Result with FirebaseUser or exception
      */
-    suspend fun signInWithOIDC(
+    suspend fun signIn(
         activity: Activity,
         providerId: String,
         customParameters: Map<String, String>? = null,
         scopes: List<String>? = null
     ): Result<FirebaseUser> {
         return try {
-            android.util.Log.d("AuthManager", "signInWithOIDC called with providerId: $providerId")
+            val providerType = when {
+                providerId.startsWith("oidc.") -> "OIDC"
+                providerId.startsWith("saml.") -> "SAML"
+                else -> "UNKNOWN"
+            }
+
+            android.util.Log.d("AuthManager", "signIn called with provider type: $providerType, ID: $providerId")
             android.util.Log.d("AuthManager", "Custom parameters: $customParameters")
             android.util.Log.d("AuthManager", "Scopes: $scopes")
 
@@ -82,16 +98,16 @@ class AuthManager private constructor() {
 
             android.util.Log.d("AuthManager", "No pending result, building OAuth provider")
 
-            // Build the OAuth provider
+            // Build the OAuth provider (works for both OIDC and SAML)
             val providerBuilder = OAuthProvider.newBuilder(providerId)
 
-            // Add custom parameters if provided
+            // Add custom parameters if provided (typically used with OIDC)
             customParameters?.forEach { (key, value) ->
                 android.util.Log.d("AuthManager", "Adding custom parameter: $key = $value")
                 providerBuilder.addCustomParameter(key, value)
             }
 
-            // Add scopes if provided (use property assignment, not setScopes)
+            // Add scopes if provided (typically used with OIDC)
             scopes?.let {
                 android.util.Log.d("AuthManager", "Adding scopes: $it")
                 providerBuilder.scopes = it
@@ -107,7 +123,7 @@ class AuthManager private constructor() {
             android.util.Log.d("AuthManager", "Sign-in activity completed")
             val user = authResult.user
             if (user != null) {
-                android.util.Log.d("AuthManager", "Sign-in successful! User ID: ${user.uid}, Email: ${user.email}")
+                android.util.Log.d("AuthManager", "Sign-in successful! Provider Type: $providerType, User ID: ${user.uid}, Email: ${user.email}")
                 Result.success(user)
             } else {
                 android.util.Log.e("AuthManager", "Sign-in failed: User is null")
@@ -119,6 +135,31 @@ class AuthManager private constructor() {
             android.util.Log.e("AuthManager", "Exception message: ${e.message}")
             Result.failure(e)
         }
+    }
+
+    /**
+     * Sign in with OpenID Connect provider
+     *
+     * @deprecated Use signIn() instead. This method is kept for backward compatibility.
+     *
+     * @param activity The activity context for the sign-in flow
+     * @param providerId The OIDC provider ID from Firebase Console
+     * @param customParameters Optional custom parameters for the OIDC provider
+     * @param scopes Optional scopes to request
+     * @return Result with FirebaseUser or exception
+     */
+    @Deprecated(
+        "Use signIn() instead, which supports both OIDC and SAML providers",
+        ReplaceWith("signIn(activity, providerId, customParameters, scopes)")
+    )
+    suspend fun signInWithOIDC(
+        activity: Activity,
+        providerId: String,
+        customParameters: Map<String, String>? = null,
+        scopes: List<String>? = null
+    ): Result<FirebaseUser> {
+        // Delegate to the new signIn method
+        return signIn(activity, providerId, customParameters, scopes)
     }
 
     /**

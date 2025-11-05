@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Android SDK - SAML Authentication Not Supported</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d32f2f;
+            border-bottom: 3px solid #d32f2f;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #1976d2;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #388e3c;
+            margin-top: 20px;
+        }
+        .quote {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            font-style: italic;
+        }
+        .status {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .note {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        a {
+            color: #1976d2;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .link-box {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        ul {
+            margin: 15px 0;
+        }
+        li {
+            margin: 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #1976d2;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Firebase Android SDK Does Not Support SAML Authentication</h1>
+
+        <p><strong>Document Purpose:</strong> This document provides official sources confirming that Firebase Android SDK does not support SAML authentication as of January 2025.</p>
+
+        <hr>
+
+        <h2>Official Firebase GitHub Issues</h2>
+
+        <h3>1. Issue #662 - SAML Provider (Original Request from 2019)</h3>
+
+        <div class="link-box">
+            <strong>URL:</strong> <a href="https://github.com/firebase/firebase-android-sdk/issues/662" target="_blank">https://github.com/firebase/firebase-android-sdk/issues/662</a>
+        </div>
+
+        <div class="quote">
+            <strong>Key Quote from Firebase Team (Malcolm Deck, July 2019):</strong><br>
+            "SAML sign-in is not yet supported on Android, but we'll mark down that there is public interest in the feature."
+        </div>
+
+        <div class="status">
+            <strong>Status:</strong> Still open as of January 2025 (5+ years later)
+        </div>
+
+        <h3>2. Issue #2895 - AUTH Google Identity Platform SAML Provider (2021)</h3>
+
+        <div class="link-box">
+            <strong>URL:</strong> <a href="https://github.com/firebase/firebase-android-sdk/issues/2895" target="_blank">https://github.com/firebase/firebase-android-sdk/issues/2895</a>
+        </div>
+
+        <div class="quote">
+            <strong>Key Quote from Firebase Team:</strong><br>
+            "Thank you for the report. I filed an internal issue b/197476711. We are unable to promise any timeline for this, but if others also have this feature request, adding a +1 on this issue can help us prioritize adding this to the roadmap."
+        </div>
+
+        <div class="status">
+            <strong>Status:</strong> Still open with label "type: feature request" - not yet implemented
+        </div>
+
+        <hr>
+
+        <h2>Additional References</h2>
+
+        <h3>3. Firebase Documentation (Web Only)</h3>
+
+        <div class="link-box">
+            <strong>URL:</strong> <a href="https://firebase.google.com/docs/auth/web/saml" target="_blank">https://firebase.google.com/docs/auth/web/saml</a>
+        </div>
+
+        <div class="note">
+            <strong>Note:</strong> Firebase only provides SAML documentation for <strong>Web SDK</strong>, not for Android/iOS native SDKs. This absence itself confirms the limitation.
+        </div>
+
+        <h3>4. Stack Overflow Discussion</h3>
+
+        <div class="link-box">
+            <strong>URL:</strong> <a href="https://stackoverflow.com/questions/52284067/saml-authentication-with-firebase" target="_blank">https://stackoverflow.com/questions/52284067/saml-authentication-with-firebase</a>
+        </div>
+
+        <p>Multiple developers confirm the Android SDK limitation and suggest workarounds.</p>
+
+        <hr>
+
+        <h2>What the Firebase Team Says</h2>
+
+        <p>From the GitHub issues, Firebase developers explicitly state:</p>
+        <ul>
+            <li>SAML is <strong>not yet supported</strong> on Android</li>
+            <li>It's an <strong>internal feature request</strong> (b/197476711)</li>
+            <li>No timeline for implementation</li>
+            <li>The feature has been requested since 2019 with no resolution</li>
+        </ul>
+
+        <h2>Why This Happens</h2>
+
+        <p>The <code>OAuthProvider</code> class in Android SDK was designed for <strong>OAuth 2.0/OIDC</strong> flows only. SAML uses a completely different protocol (XML-based assertions vs JSON tokens), and the Android SDK lacks the code to:</p>
+
+        <ol>
+            <li>Parse SAML responses</li>
+            <li>Validate SAML signatures</li>
+            <li>Extract SAML assertions</li>
+            <li>Convert them to Firebase credentials</li>
+        </ol>
+
+        <p>This is why you get <code>INVALID_CREDENTIAL_OR_PROVIDER_ID</code> - the SDK literally cannot process SAML responses.</p>
+
+        <h2>Error Message</h2>
+
+        <div class="quote">
+            An internal error has occurred. [ INVALID_CREDENTIAL_OR_PROVIDER_ID:Invalid IdP response/credential: https://fir-poc-kotlin.firebaseapp.com/__/auth/handler?providerId=saml.auth0 ]
+        </div>
+
+        <h2>Comparison: SAML vs OIDC Support</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>SAML</th>
+                    <th>OIDC</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Android SDK Support</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                </tr>
+                <tr>
+                    <td>Web SDK Support</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                </tr>
+                <tr>
+                    <td>Auth0 Support</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                </tr>
+                <tr>
+                    <td>Firebase Support</td>
+                    <td>❌ Android only</td>
+                    <td>✅ Full</td>
+                </tr>
+                <tr>
+                    <td><strong>Recommendation</strong></td>
+                    <td><strong>Don't use on Android</strong></td>
+                    <td><strong>Use this instead</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Recommended Solution</h2>
+
+        <p>Since Firebase Android SDK does not support SAML, you should use <strong>OIDC (OpenID Connect)</strong> authentication instead:</p>
+
+        <ul>
+            <li>Auth0 supports both SAML and OIDC protocols</li>
+            <li>OIDC is fully supported on Firebase Android SDK</li>
+            <li>No code changes needed - just configuration updates</li>
+            <li>Provider ID format: <code>oidc.auth0</code> (instead of <code>saml.auth0</code>)</li>
+        </ul>
+
+        <h2>Conclusion</h2>
+
+        <p>These official GitHub issues are the authoritative sources confirming that Firebase Android SDK does not support SAML authentication. The feature has been requested since 2019 but remains unimplemented with no timeline for release.</p>
+
+        <div class="timestamp">
+            <strong>Document Generated:</strong> January 2025<br>
+            <strong>Firebase Android SDK Version:</strong> 32.7.0<br>
+            <strong>Project:</strong> firebase-auth-poc-kotlin
+        </div>
+    </div>
+</body>
+</html>

@@ -13,13 +13,15 @@ import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.launch
 
 /**
- * LoginActivity - Handles OpenID Connect authentication
+ * LoginActivity - Handles OIDC and SAML authentication
  *
- * This activity demonstrates how to implement OIDC authentication with Firebase.
+ * This activity demonstrates how to implement OIDC and SAML authentication with Firebase.
  * Before using, you must:
- * 1. Configure your OIDC provider (Azure AD, Okta, Auth0, etc.)
- * 2. Add the provider to Firebase Console -> Authentication -> Sign-in method -> Custom providers
- * 3. Update the oidc.provider.id in app/src/main/res/raw/config_properties
+ * 1. Configure your provider (Auth0, Azure AD, Okta, etc.) as either OIDC or SAML
+ * 2. Add the provider to Firebase Console -> Authentication -> Sign-in method
+ *    - For OIDC: Add custom provider with "oidc." prefix
+ *    - For SAML: Add SAML provider with "saml." prefix
+ * 3. Update the auth.provider.id in app/src/main/res/raw/config_properties
  */
 class LoginActivity : AppCompatActivity() {
 
@@ -40,11 +42,20 @@ class LoginActivity : AppCompatActivity() {
         // Load configuration
         try {
             authConfig = ConfigManager.getAuthConfig(this)
-            android.util.Log.d("LoginActivity", "Configuration loaded: ${authConfig.oidcProviderId}")
+            android.util.Log.d("LoginActivity", "Configuration loaded - OIDC: ${authConfig.oidcProviderId}, SAML: ${authConfig.samlProviderId}")
+
+            // Enable/disable buttons based on configuration
+            binding.btnSignIn.isEnabled = authConfig.hasOIDC()
+            binding.btnSamlSignIn.isEnabled = authConfig.hasSAML()
+
+            if (!authConfig.hasOIDC() && !authConfig.hasSAML()) {
+                showError("No authentication providers configured")
+            }
         } catch (e: ConfigurationException) {
             android.util.Log.e("LoginActivity", "Failed to load configuration", e)
             showError("Configuration Error: ${e.message}")
             binding.btnSignIn.isEnabled = false
+            binding.btnSamlSignIn.isEnabled = false
             return
         }
 
@@ -52,38 +63,72 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
+        // Setup OIDC button
         binding.btnSignIn.setOnClickListener {
             // If development mode is enabled, show dialog to allow changing provider ID
             if (authConfig.developmentMode) {
-                showProviderIdDialog()
+                showProviderIdDialog("oidc")
             } else {
-                // Use provider ID from config directly
-                signInWithOIDC(authConfig.oidcProviderId)
+                // Use configured OIDC provider
+                authConfig.oidcProviderId?.let { providerId ->
+                    signInWithProvider(providerId)
+                } ?: run {
+                    showError("OIDC provider not configured")
+                }
             }
         }
 
+        // Setup SAML button
+        binding.btnSamlSignIn.setOnClickListener {
+            // If development mode is enabled, show dialog to allow changing provider ID
+            if (authConfig.developmentMode) {
+                showProviderIdDialog("saml")
+            } else {
+                // Use configured SAML provider
+                authConfig.samlProviderId?.let { providerId ->
+                    signInWithProvider(providerId)
+                } ?: run {
+                    showError("SAML provider not configured")
+                }
+            }
+        }
+
+        // Setup Google Sign-In button
         binding.btnGoogleSignIn.setOnClickListener {
             signInWithGoogle()
         }
     }
 
     /**
-     * Shows a dialog to enter or confirm the OIDC Provider ID
+     * Shows a dialog to enter or confirm the Provider ID
      * This is helpful for testing different providers in development mode
+     *
+     * @param providerType The type of provider ("oidc" or "saml")
      */
-    private fun showProviderIdDialog() {
+    private fun showProviderIdDialog(providerType: String) {
         val input = android.widget.EditText(this)
-        input.setText(authConfig.oidcProviderId)
-        input.hint = "Enter your OIDC Provider ID"
+
+        // Pre-fill with appropriate provider ID from config
+        val defaultProviderId = if (providerType == "oidc") {
+            authConfig.oidcProviderId ?: "oidc.auth0"
+        } else {
+            authConfig.samlProviderId ?: "saml.auth0"
+        }
+
+        input.setText(defaultProviderId)
+        input.hint = "Enter your ${providerType.uppercase()} Provider ID"
+
+        val title = if (providerType == "oidc") "OIDC Provider" else "SAML Provider"
+        val format = if (providerType == "oidc") "oidc.provider_name" else "saml.provider_name"
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("OIDC Provider ID (Development Mode)")
-            .setMessage("Enter your provider ID from Firebase Console\n(Format: oidc.provider_name)")
+            .setTitle("$title (Development Mode)")
+            .setMessage("Enter your provider ID from Firebase Console\nFormat: $format")
             .setView(input)
             .setPositiveButton("Sign In") { _, _ ->
                 val providerId = input.text.toString().trim()
                 if (providerId.isNotEmpty()) {
-                    signInWithOIDC(providerId)
+                    signInWithProvider(providerId)
                 } else {
                     showError("Provider ID cannot be empty")
                 }
@@ -134,16 +179,27 @@ class LoginActivity : AppCompatActivity() {
     }
 
     /**
-     * Initiates OpenID Connect sign-in flow
+     * Initiates OAuth provider sign-in flow (OIDC or SAML)
      *
      * IMPORTANT: This implementation follows Firebase best practices:
      * 1. Checks for pending auth results first (handles Custom Chrome Tabs lifecycle)
      * 2. Avoids Activity references in listeners to prevent detachment issues
+     * 3. Supports both OIDC (oidc.*) and SAML (saml.*) providers
      *
-     * @param providerId The OIDC provider ID configured in Firebase Console
+     * @param providerId The provider ID configured in Firebase Console (oidc.* or saml.*)
      */
-    private fun signInWithOIDC(providerId: String) {
-        android.util.Log.d("LoginActivity", "Starting OIDC sign-in with provider: $providerId")
+    private fun signInWithProvider(providerId: String) {
+        val providerType = when {
+            providerId.startsWith("oidc.") -> "OIDC"
+            providerId.startsWith("saml.") -> "SAML"
+            else -> "OAuth"
+        }
+
+        android.util.Log.d("LoginActivity", "========================================")
+        android.util.Log.d("LoginActivity", "Starting $providerType sign-in")
+        android.util.Log.d("LoginActivity", "Provider ID: $providerId")
+        android.util.Log.d("LoginActivity", "Config - OIDC: ${authConfig.oidcProviderId}, SAML: ${authConfig.samlProviderId}")
+        android.util.Log.d("LoginActivity", "========================================")
         showLoading(true)
 
         // STEP 1: Check for pending authentication result first
@@ -168,13 +224,22 @@ class LoginActivity : AppCompatActivity() {
         android.util.Log.d("LoginActivity", "No pending auth result, starting new sign-in flow")
 
         // STEP 2: Build the OAuth provider with your provider ID
+        // Note: OAuthProvider works for both OIDC and SAML based on the provider ID prefix
         val provider = OAuthProvider.newBuilder(providerId)
 
-        // Optional: Add custom parameters if required by your OIDC provider
-        // provider.addCustomParameter("tenant", "your-tenant-id")
+        // Add custom parameters from config if any (primarily for OIDC)
+        if (authConfig.customParameters.isNotEmpty()) {
+            authConfig.customParameters.forEach { (key, value) ->
+                android.util.Log.d("LoginActivity", "Adding custom parameter: $key")
+                provider.addCustomParameter(key, value)
+            }
+        }
 
-        // Optional: Add scopes if required
-        // provider.scopes = listOf("openid", "email", "profile")
+        // Add scopes from config if any (primarily for OIDC)
+        if (authConfig.scopes.isNotEmpty()) {
+            android.util.Log.d("LoginActivity", "Adding scopes: ${authConfig.scopes}")
+            provider.scopes = authConfig.scopes
+        }
 
         // STEP 3: Start the OAuth sign-in flow
         // Note: We avoid referencing 'this' Activity in the listeners to prevent
@@ -182,7 +247,7 @@ class LoginActivity : AppCompatActivity() {
         android.util.Log.d("LoginActivity", "Calling startActivityForSignInWithProvider...")
         auth.startActivityForSignInWithProvider(this, provider.build())
             .addOnSuccessListener { authResult ->
-                android.util.Log.d("LoginActivity", "Sign-in success! User: ${authResult.user?.uid}")
+                android.util.Log.d("LoginActivity", "Sign-in success! Provider Type: $providerType, User: ${authResult.user?.uid}")
                 android.util.Log.d("LoginActivity", "User email: ${authResult.user?.email}")
                 android.util.Log.d("LoginActivity", "User display name: ${authResult.user?.displayName}")
                 handleAuthSuccess(authResult.user)
@@ -193,6 +258,15 @@ class LoginActivity : AppCompatActivity() {
                 android.util.Log.e("LoginActivity", "Stack trace:", exception)
                 handleAuthFailure(exception)
             }
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     * @deprecated Use signInWithProvider() instead
+     */
+    @Deprecated("Use signInWithProvider() instead", ReplaceWith("signInWithProvider(providerId)"))
+    private fun signInWithOIDC(providerId: String) {
+        signInWithProvider(providerId)
     }
 
     /**
@@ -241,23 +315,39 @@ class LoginActivity : AppCompatActivity() {
 
         showLoading(false)
 
+        // Extract provider type from exception if available
+        val providerType = when {
+            exception.message?.contains("oidc.", ignoreCase = true) == true -> "OIDC"
+            exception.message?.contains("saml.", ignoreCase = true) == true -> "SAML"
+            exception.message?.contains("google", ignoreCase = true) == true -> "Google"
+            else -> "Unknown"
+        }
+
+        android.util.Log.e("LoginActivity", "[$providerType] Authentication failed")
+        android.util.Log.e("LoginActivity", "Full error message: ${exception.message}")
+
         val errorMessage = when {
             exception.message?.contains("provider", ignoreCase = true) == true ->
-                "Provider not configured. Please check Firebase Console."
+                "[$providerType] Provider ID not configured. Please check:\n" +
+                "1. Firebase Console -> Authentication -> Sign-in method\n" +
+                "2. Verify the provider ID in config_properties matches Firebase\n" +
+                "3. Ensure the provider is enabled in Firebase"
             exception.message?.contains("network", ignoreCase = true) == true ->
                 "Network error. Please check your connection."
             exception.message?.contains("CANCELED", ignoreCase = true) == true ||
             exception.message?.contains("cancelled", ignoreCase = true) == true ->
                 "Authentication cancelled by user."
+            exception.message?.contains("10") == true ->
+                "[$providerType] Developer error: Check your Firebase configuration and provider ID"
             else ->
-                "Authentication failed: ${exception.message}"
+                "[$providerType] Authentication failed: ${exception.message}"
         }
 
         android.util.Log.e("LoginActivity", "Displaying error to user: $errorMessage")
         showError(errorMessage)
 
         // Log the error for debugging
-        android.util.Log.e("LoginActivity", "OIDC Sign-in failed - Full stack trace:", exception)
+        android.util.Log.e("LoginActivity", "Authentication failed - Full stack trace:", exception)
     }
 
     private fun navigateToHome() {
@@ -268,7 +358,10 @@ class LoginActivity : AppCompatActivity() {
 
     private fun showLoading(show: Boolean) {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
-        binding.btnSignIn.isEnabled = !show
+        // Disable ALL authentication buttons to prevent interference
+        binding.btnSignIn.isEnabled = !show && authConfig.hasOIDC()
+        binding.btnSamlSignIn.isEnabled = !show && authConfig.hasSAML()
+        binding.btnGoogleSignIn.isEnabled = !show
     }
 
     private fun showError(message: String) {

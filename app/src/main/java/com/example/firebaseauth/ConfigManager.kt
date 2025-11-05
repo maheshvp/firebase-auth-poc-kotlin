@@ -70,14 +70,36 @@ object ConfigManager {
 
     /**
      * Parse properties into AuthConfig object
+     * Supports both OIDC and SAML provider configurations simultaneously
      */
     private fun parseAuthConfig(properties: Properties): AuthConfig {
-        // Get required OIDC provider ID
-        val providerId = properties.getProperty("oidc.provider.id")?.trim()
-        if (providerId.isNullOrEmpty()) {
+        // Get OIDC provider ID
+        val oidcProviderId = properties.getProperty("oidc.provider.id")?.trim()
+
+        // Validate OIDC provider ID format if provided
+        if (!oidcProviderId.isNullOrEmpty() && !oidcProviderId.startsWith("oidc.")) {
             throw ConfigurationException(
-                "Missing required property 'oidc.provider.id' in config_properties. " +
-                "Please add your OIDC provider ID (e.g., oidc.auth0)"
+                "Invalid OIDC provider ID format: '$oidcProviderId'. " +
+                "OIDC provider ID must start with 'oidc.' (e.g., 'oidc.auth0')"
+            )
+        }
+
+        // Get SAML provider ID
+        val samlProviderId = properties.getProperty("saml.provider.id")?.trim()
+
+        // Validate SAML provider ID format if provided
+        if (!samlProviderId.isNullOrEmpty() && !samlProviderId.startsWith("saml.")) {
+            throw ConfigurationException(
+                "Invalid SAML provider ID format: '$samlProviderId'. " +
+                "SAML provider ID must start with 'saml.' (e.g., 'saml.auth0')"
+            )
+        }
+
+        // At least one provider must be configured
+        if (oidcProviderId.isNullOrEmpty() && samlProviderId.isNullOrEmpty()) {
+            throw ConfigurationException(
+                "At least one provider must be configured. " +
+                "Please add 'oidc.provider.id' and/or 'saml.provider.id' in config_properties."
             )
         }
 
@@ -90,14 +112,13 @@ object ConfigManager {
         val scopes = parseScopes(scopesString)
 
         // Parse development mode flag
-        val developmentMode = properties.getProperty("oidc.development.mode", "false")
-            ?.trim()
-            ?.toBoolean() ?: false
+        val developmentMode = properties.getProperty("auth.development.mode", "false")?.trim()?.toBoolean() ?: false
 
-        android.util.Log.d("ConfigManager", "Loaded config - Provider: $providerId, Dev Mode: $developmentMode")
+        android.util.Log.d("ConfigManager", "Loaded config - OIDC: $oidcProviderId, SAML: $samlProviderId, Dev Mode: $developmentMode")
 
         return AuthConfig(
-            oidcProviderId = providerId,
+            oidcProviderId = oidcProviderId,
+            samlProviderId = samlProviderId,
             customParameters = customParameters,
             scopes = scopes,
             developmentMode = developmentMode
